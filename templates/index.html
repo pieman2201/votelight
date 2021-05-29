@@ -1,0 +1,20 @@
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script src="https://cdn.socket.io/3.1.3/socket.io.min.js"></script>
+        <script src="{{ url_for('static', filename = 'app.js') }}"></script>
+        <link rel="stylesheet" href="{{ url_for('static', filename = 'style.css') }}" />
+    </head>
+    <body>
+        <h2>Winner: <span style="color: green" id="winner"></span></h2>
+        <h3>You have</h3>
+        <h1 id="clock">??:??</h1>
+        <h3>to vote!</h3>
+
+        <img id="camera" src="http://192.168.1.63:8080/?action=stream"/>
+
+    </body>
+</html>
+
+
