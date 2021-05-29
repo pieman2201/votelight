@@ -1,97 +1,53 @@
 import time
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit
 from threading import Thread, Event
+import democracy
 
-class Democracy():
-    def __init__(self, interval = 60):
-        self.interval = interval
-        self.votes = {
-                '1': 0,
-                '0': 0
-                }
-        self.voters = []
-        self.last_winner = '0'
-        self.voting_is_over = False
+app = Flask(__name__)
+socketio = SocketIO(app)
 
-    def getRemaining(self):
-        current = int(time.time())
-        end = current - (current % self.interval) + self.interval
-        return end - current
+def handle_result(result):
+    print('%s wins with %d votes' % (result.winner, result.win_votes))
+    socketio.emit('result',
+            {'winner': result.winner}, namespace = '/ws')
 
-    def getCountDown(self, remaining):
-        return '%02d:%02d' % (int(remaining / 60), remaining % 60)
+    with open('/sys/class/leds/led0/brightness', 'w') as f:
+        f.write(result.winner)
 
-    def runCountDown(self):
-        remaining = self.getRemaining()
-        while remaining > 1:
-            start = time.time()
-            remaining = self.getRemaining()
-            socketio.emit('countdown', {
-                'remaining': remaining,
-                'countdown': self.getCountDown(remaining)
-                }, namespace = '/ws', broadcast = True)
-            time.sleep(max(int(start) + 1 - time.time(), 0))
-        self.voting_is_over = True
-        socketio.emit('countdown', {
-            'remaining': 0,
-            'countdown': "Tallying..."
-            }, namespace = '/ws')
-
-    def tallyVote(self, candidate):
-        if candidate not in self.votes.keys():
-            return 'failed'
-        self.votes[candidate] += 1
-
-    def getWinner(self):
-        winner = max(self.votes.keys(), key = self.votes.get)
-        loser = min(self.votes.keys(), key = self.votes.get)
-        return self.last_winner if self.votes[winner] == votes[loser] else winner
-
-    def respectVote(self):
-        self.last_winner = self.getWinner()
-
-        socketio.emit('winner',
-                {'name': 'o' + ('ff', 'n')[int(self.last_winner)]}, namespace = '/ws')
-
-        with open('/sys/class/leds/led0/brightness', 'w') as f:
-            f.write(self.last_winner)
-
-    def flushBallotBox(self):
-        self.votes = {
-                '1': 0,
-                '0': 0
-                }
-        self.voters = []
-
-    def run(self):
-        while True:
-            self.runCountDown()
-            self.respectVote()
-            self.flushBallotBox()
+def handle_countdown(remaining, string):
+    socketio.emit('countdown', {
+        'remaining': remaining,
+        'countdown': string
+        }, namespace = '/ws', broadcast = True)
 
 
 @app.route('/')
 def index():
-    return render_template('index.html', winner = democracy.last_winner)
+    return render_template('index.html', winner = government.get_elected_candidate())
 
 @socketio.on('connect', namespace = '/ws')
 def connect():
     global thread
 
     if not thread.is_alive():
-        thread = socketio.start_background_task(democracy.run)
+        thread = socketio.start_background_task(government.run)
 
-@socketio.on('vote', namespace = '/ws')
-def vote(data):
-    democracy.tallyVote(
+@socketio.on('tally_vote', namespace = '/ws')
+def tally_vote(candidate):
+    vote = democracy.Vote(request.remote_addr, candidate)
+    print('%s casts a vote for %s' % (vote.voter, vote.candidate))
+    government.cast_vote(vote)
 
 
 if __name__ == '__main__':
-    app = Flask(__name__)
-    socketio = SocketIO(app)
-    thread = Thread()
-    democracy = Democracy()
-    democracy.respectVote()
+    government = democracy.Democracy(
+            interval = 60,
+            candidates = ['0', '1'],
+            countdown_callback = handle_countdown,
+            result_callback = handle_result
+            )
+
+    thread = socketio.start_background_task(government.run)
 
     socketio.run(app, host = '0.0.0.0')
