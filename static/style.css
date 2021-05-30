@@ -6,8 +6,17 @@ body {
 }
 
 #clock {
+    color: yellow;
 }
 
 #camera {
     max-width: 100%;
+}
+
+#voting-container {
+    height: 2em;
+    display: flex;
+    margin: 1em;
+    justify-content: center;
+    align-items: center;
 }

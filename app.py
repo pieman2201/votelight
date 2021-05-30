@@ -9,8 +9,9 @@ socketio = SocketIO(app)
 
 def handle_result(result):
     print('%s wins with %d votes' % (result.winner, result.win_votes))
-    socketio.emit('result',
-            {'winner': result.winner}, namespace = '/ws')
+    socketio.emit('result', {
+        'winner': result.winner
+        }, namespace = '/ws', broadcast = True)
 
     with open('/sys/class/leds/led0/brightness', 'w') as f:
         f.write(result.winner)
@@ -21,33 +22,36 @@ def handle_countdown(remaining, string):
         'countdown': string
         }, namespace = '/ws', broadcast = True)
 
-
 @app.route('/')
 def index():
-    return render_template('index.html', winner = government.get_elected_candidate())
+    return render_template('index.html',
+            government = government,
+            voter = request.remote_addr
+            )
 
 @socketio.on('connect', namespace = '/ws')
 def connect():
-    global thread
+    global gov_thread
 
-    if not thread.is_alive():
-        thread = socketio.start_background_task(government.run)
+    if not gov_thread.is_alive():
+        gov_thread = socketio.start_background_task(government.run)
+
 
 @socketio.on('tally_vote', namespace = '/ws')
 def tally_vote(candidate):
     vote = democracy.Vote(request.remote_addr, candidate)
     print('%s casts a vote for %s' % (vote.voter, vote.candidate))
-    government.cast_vote(vote)
+    government.get_election().cast_vote(vote)
 
 
 if __name__ == '__main__':
     government = democracy.Democracy(
-            interval = 60,
+            interval = 20,
             candidates = ['0', '1'],
             countdown_callback = handle_countdown,
             result_callback = handle_result
             )
 
-    thread = socketio.start_background_task(government.run)
+    gov_thread = socketio.start_background_task(government.run)
 
     socketio.run(app, host = '0.0.0.0')

@@ -8,25 +8,26 @@ class Vote():
 
 class ElectionResult():
     def __init__(self, votes, default):
-        self.votes = votes
-        self.default = default
 
-        winner = max(self.votes.keys(), key = self.votes.get)
-        winner = self.default if len(set(self.votes.values())) == 1 else winner
-        loser = min(self.votes.keys(), key = lambda k: self.votes.get(k) if k != winner else float('inf'))
+        tally = {default: 0}
+        for voter in votes.keys():
+            tally[votes[voter]] = tally.get(votes[voter], 0) + 1
+
+        winner = max(tally.keys(), key = tally.get)
+        winner = default if len(set(tally.values())) == 1 else winner
+        loser = min(tally.keys(), key = lambda k: tally.get(k) if k != winner else float('inf'))
 
         self.winner = winner
-        self.win_votes = self.votes[winner]
+        self.win_votes = tally[winner]
         self.loser = loser
-        self.loss_votes = self.votes[loser]
+        self.loss_votes = tally[loser]
 
 
 class Election():
     def __init__(self, end_time, default = None, candidates = ['0', '1'], countdown_callback = (lambda r, s: None)):
         self.end_time = end_time
         self.candidates = candidates
-        self.votes = { c: 0 for c in self.candidates }
-        self.voters = []
+        self.votes = {}
         self.default = default
         if self.default ==  None:
             self.default = self.candidates[0]
@@ -40,10 +41,15 @@ class Election():
         remaining = self.get_remaining()
         return '%02d:%02d' % (int(remaining / 60), remaining % 60)
 
+    def can_vote(self, voter):
+        return (self.votes.get(voter, None) is None and not time.time() >= self.end_time)
+
     def cast_vote(self, vote):
-        if vote.voter not in self.voters and vote.candidate in self.candidates and not time.time() >= self.end_time:
-            self.voters.append(vote.voter)
-            self.votes[vote.candidate] += 1
+        if self.can_vote(vote.voter) and vote.candidate in self.candidates:
+            self.votes[vote.voter] = vote.candidate
+
+    def retrieve_vote(self, voter):
+        return self.votes.get(voter, None)
 
     def get_result(self):
         return ElectionResult(self.votes, self.default)
@@ -73,11 +79,8 @@ class Democracy():
                     )
                 ]
 
-    def cast_vote(self, vote):
-        self.elections[-1].cast_vote(vote)
-
-    def get_elected_candidate(self):
-        return self.elections[-1].default
+    def get_election(self):
+        return self.elections[-1]
 
     def run(self):
         while True:
