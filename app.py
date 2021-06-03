@@ -13,9 +13,6 @@ def handle_result(result):
         'winner': result.winner
         }, namespace = '/ws', broadcast = True)
 
-    with open('/sys/class/leds/led0/brightness', 'w') as f:
-        f.write(result.winner)
-
 def handle_countdown(remaining, string):
     socketio.emit('countdown', {
         'remaining': remaining,

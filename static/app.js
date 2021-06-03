@@ -12,6 +12,20 @@ $(document).ready(function() {
         $('#voter-result').hide()
 
     });
+
+    player = OvenPlayer.create("player", {
+        sources: [
+            {
+                "file": "ws://" + document.domain + ":3333/app/stream",
+                "label": "webrtc-0",
+                "type": "webrtc"
+            }
+        ],
+        autoStart: true,
+        controls: false,
+        mute: true,
+        volume: 0
+    });
 });
 
 function vote(candidate) {
@@ -21,4 +35,5 @@ function vote(candidate) {
     $('#voter-interface').hide();
     $('#voter-result').show()
 }
+
 
