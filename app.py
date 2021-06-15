@@ -2,15 +2,21 @@ import time
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit
 from threading import Thread, Event
-import democracy
+import rgbvote
 
 app = Flask(__name__)
-socketio = SocketIO(app)
+socketio = SocketIO(app, async_mode='eventlet')
+
+import eventlet
+eventlet.monkey_patch()
+
 
 def handle_result(result):
-    print('%s wins with %d votes' % (result.winner, result.win_votes))
+    print('outcome: %s with %d votes' % (result.color.as_tuple_str(), result.total_votes))
     socketio.emit('result', {
-        'winner': result.winner
+        'rgb': result.color.as_tuple(),
+        'color': result.color.as_hex_str(),
+        'tally': result.tally.tallies
         }, namespace = '/ws', broadcast = True)
 
 def handle_countdown(remaining, string):
@@ -18,6 +24,12 @@ def handle_countdown(remaining, string):
         'remaining': remaining,
         'countdown': string
         }, namespace = '/ws', broadcast = True)
+
+def handle_resume():
+    socketio.emit('resume', {
+        'color': government.current.color.as_hex_str()
+        }, namespace = '/ws', broadcast = True)
+
 
 @app.route('/')
 def index():
@@ -36,19 +48,20 @@ def connect():
 
 @socketio.on('tally_vote', namespace = '/ws')
 def tally_vote(candidate):
-    vote = democracy.Vote(request.remote_addr, candidate)
+    vote = rgbvote.RGBVote(request.remote_addr, candidate)
     print('%s casts a vote for %s' % (vote.voter, vote.candidate))
     government.get_election().cast_vote(vote)
 
 
 if __name__ == '__main__':
-    government = democracy.Democracy(
-            interval = 20,
-            candidates = ['0', '1'],
+    government = rgbvote.RGBDemocracy(
+            vote_time = 55,
+            rest_time = 5,
             countdown_callback = handle_countdown,
-            result_callback = handle_result
+            result_callback = handle_result,
+            resume_callback = handle_resume
             )
 
     gov_thread = socketio.start_background_task(government.run)
 
-    socketio.run(app, host = '0.0.0.0')
+    socketio.run(app, host = '0.0.0.0', port = 80)

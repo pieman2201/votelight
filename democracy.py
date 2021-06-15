@@ -38,8 +38,11 @@ class Election():
         return int(r - (1 if r < 0 else 0))
 
     def get_countdown(self):
-        remaining = self.get_remaining()
-        return '%02d:%02d' % (int(remaining / 60), remaining % 60)
+        remaining = self.get_remaining() + 1
+        if remaining >= 60:
+            return '%02d:%02d' % (int(remaining / 60), remaining % 60)
+        else:
+            return '%ds' % int(remaining)
 
     def can_vote(self, voter):
         return (self.votes.get(voter, None) is None and not time.time() >= self.end_time)

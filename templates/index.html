@@ -9,29 +9,61 @@
     </head>
     <body>
         {% set election = government.get_election() %}
-        <h2>In office: <span style="color: green" id="winner">{{ election.default }}</span></h2>
+        <h2>Current: <span id="current" style="color:{{government.current.color.as_hex_str()}};background:white">
+                                       {{ government.current.color.as_hex_str() }}
+            </span></h2>
 
         <div style="display: flex; align-items: center; justify-content: center;">
-            <h1>You have <span id="clock">{{ election.get_countdown() }}</span> to vote!</h1>
+            <div id="vote-time">
+                <h1>You have <span id="clock">{{ election.get_clock_str() }}</span> to vote!</h1>
+            </div>
+            <div id="rest-time">
+                <h1>
+                    <span style="color: #ff0000" id="r_count">{{ government.current.tally['R'] }}</span>
+                    <span style="color: #00ff00" id="g_count">{{ government.current.tally['G'] }}</span>
+                    <span style="color: #0000ff" id="b_count">{{ government.current.tally['B'] }}</span>
+                </h1>
+            </div>
         </div>
+
+        <script>
+        {% if government.resting %}
+            $('#vote-time').hide();
+        {% else %}
+            $('#rest-time').hide();
+        {% endif %}
+        </script>
 
         <div id="player"></div>
 
         <div id="voting-container">
             <div id="voter-interface">
-            <button onclick="vote('0')">Vote OFF</button>
-            <button onclick="vote('1')" >Vote ON </button>
+            <button style="background: black; color: red" onclick="vote('R')">Vote R</button>
+            <button style="background: black; color: green" onclick="vote('G')">Vote G</button>
+            <button style="background: black; color: blue" onclick="vote('B')">Vote B</button>
             </div>
             <div id="voter-result">
-            You voted for <span style="color: green" id="vote">{{ election.retrieve_vote(voter) }}</span>
+            {% if election.retrieve_vote(voter) == 'R' %}
+                {% set voted_color = 'red' %}
+            {% elif election.retrieve_vote(voter) == 'G' %}
+                {% set voted_color = 'green' %}
+            {% elif election.retrieve_vote(voter) == 'B' %}
+                {% set voted_color = 'blue' %}
+            {% else %}
+                {% set voted_color = 'white' %}
+            {% endif %}
+            You voted for <span style="color:{{voted_color}}" id="vote">{{ election.retrieve_vote(voter) }}</span>
             </div>
         </div>
 
         <script>
         {% if election.can_vote(voter) %}
             $('#voter-result').hide();
+        {% elif not government.resting %}
+            $('#voter-interface').hide();
         {% else %}
             $('#voter-interface').hide();
+            $('#voter-result').hide();
         {% endif %}
         </script>
 
