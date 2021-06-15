@@ -10,8 +10,8 @@ $(document).ready(function() {
         $('#voter-result').hide()
         $('#vote-time').show();
         $('#rest-time').hide();
-        $('#current').text(data.color);
-        $('#current').css('color', data.color);
+        $('#current-hex').text(data.color);
+        $('#current-box').css('background', data.color);
     });
 
 

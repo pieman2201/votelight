@@ -9,16 +9,20 @@
     </head>
     <body>
         {% set election = government.get_election() %}
-        <h2>Current: <span id="current" style="color:{{government.current.color.as_hex_str()}};background:white">
-                                       {{ government.current.color.as_hex_str() }}
-            </span></h2>
+        <h2>
+            Current:
+            <div id="current-box" style="background:{{government.current.color.as_hex_str()}};width:1em;display:inline-table">&nbsp;</div>
+            <span id="current-hex">{{ government.current.color.as_hex_str() }}</span>
+        </h2>
 
         <div style="display: flex; align-items: center; justify-content: center;">
             <div id="vote-time">
-                <h1>You have <span id="clock">{{ election.get_clock_str() }}</span> to vote!</h1>
+                Time remaining:
+                <h1 style="margin-top: 0"><span id="clock">{{ election.get_clock_str() }}</span></h1>
             </div>
             <div id="rest-time">
-                <h1>
+                Results:
+                <h1 style="margin-top: 0">
                     <span style="color: #ff0000" id="r_count">{{ government.current.tally['R'] }}</span>
                     <span style="color: #00ff00" id="g_count">{{ government.current.tally['G'] }}</span>
                     <span style="color: #0000ff" id="b_count">{{ government.current.tally['B'] }}</span>
@@ -38,9 +42,9 @@
 
         <div id="voting-container">
             <div id="voter-interface">
-            <button style="background: black; color: red" onclick="vote('R')">Vote R</button>
-            <button style="background: black; color: green" onclick="vote('G')">Vote G</button>
-            <button style="background: black; color: blue" onclick="vote('B')">Vote B</button>
+            <button style="background: red; color: white" onclick="vote('R')">Vote R</button>
+            <button style="background: green; color: white" onclick="vote('G')">Vote G</button>
+            <button style="background: blue; color: white" onclick="vote('B')">Vote B</button>
             </div>
             <div id="voter-result">
             {% if election.retrieve_vote(voter) == 'R' %}
