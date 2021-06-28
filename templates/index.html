@@ -7,7 +7,7 @@
         <script src="{{ url_for('static', filename = 'ovenplayer/ovenplayer.js') }}"></script>
         <link rel="stylesheet" href="{{ url_for('static', filename = 'style.css') }}" />
     </head>
-    <body>
+    <body style="max-width: 600px; margin: auto">
         {% set election = government.get_election() %}
         <h2>
             Current:
@@ -72,6 +72,15 @@
         </script>
 
         <h3>Your voter ID: <span style="color: yellow" id="voter-id">{{ voter }}</span></h3>
+
+        <h3><i>Darkness Dies in Democracy</i></h3>
+
+        <div style="margin: 8px">
+
+        <p><span style="font-weight: bold">How it works:</span> The timer counts down the number of seconds remaining in the current voting cycle. You may vote for R(ed), G(reen), or B(lue). After the cycle ends, vote counts are displayed for each, and the LED changes color in real time to match the overall outcome.</p>
+        <p>Each IP address is allowed one vote per cycle. Votes are final for each cycle and can't be changed until the next cycle begins. If nobody votes during a cycle, the light will turn off as a result.</p>
+
+        </div>
 
     </body>
 </html>
